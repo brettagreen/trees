@@ -32,9 +32,7 @@ class BinaryTree {
             } else {
                 count++;
                 subLeftCount = gleanDepth(node.left, count);
-                console.log('slc', subLeftCount);
                 subRightCount = gleanDepth(node.right, count);
-                console.log('src', subRightCount);
             }
 
             return subLeftCount < subRightCount ? subLeftCount : subRightCount;
@@ -69,11 +67,9 @@ class BinaryTree {
                 count++;
                 if (node.left) {
                     subLeftCount = gleanDepth(node.left, count);
-                    console.log('slc', subLeftCount);
                 }
                 if (node.right) {
                     subRightCount = gleanDepth(node.right, count);
-                    console.log('src', subRightCount);
                 }
 
             }
@@ -168,6 +164,7 @@ class BinaryTree {
      * areCousins(node1, node2): determine whether two nodes are cousins
      * (i.e. are at the same level but have different parents. ) */
 
+    //presumes non-null, unique .val nodes
     areCousins(node1, node2) {
         const node = this.root;
         const answers = [];
@@ -176,28 +173,19 @@ class BinaryTree {
             return false;
         }
 
-        function getDepth(node, count) {
-            let left;
-            let right;
-            let parent = node;
-
+        function getDepth(node, count, parent) {
             if ([node1.val, node2.val].includes(node.val)) {
-                return [count, parent];
-            } else {
-                count++;
-            }
+                answers.push([count, parent]);
+            } 
+
+            count++;
+
             if (node.left) {
-               left = getDepth(node.left, count);
-               if (left) {
-                answers.push(left);
-               }
+               getDepth(node.left, count, node);
             }
 
             if (node.right) {
-               right = getDepth(node.right, count);
-               if (right) {
-                answers.push(right);
-               }
+               getDepth(node.right, count, node);
             }
 
         }
@@ -205,7 +193,7 @@ class BinaryTree {
         getDepth(node, 1);
 
         if (answers.length === 2) {
-            return answers[0][0] !== answers[1][0] && answers[0][1] !== answers[1][1];
+            return answers[0][0] === answers[1][0] && answers[0][1] !== answers[1][1];
         } else {
             return "one or both node values not found in binary tree";
         }
@@ -213,13 +201,45 @@ class BinaryTree {
 
     /** Further study!
      * serialize(tree): serialize the BinaryTree object tree into a string. */
+    // for now, this code will only work with unique node values
 
-    static serialize() {
+    static serialize(tree) {
+        let stringified = `{"val": ${tree.root.val}, "left": ${tree.root.val}, "right": ${tree.root.val} }`;
 
+        function buildString(node) {
+            if (node.left) { 
+                let aspect;
+                if (!node.right) {
+                    aspect = 'right';
+                    stringified = stringified.replace(`"${aspect}": ${node.val}`, `"${aspect}": null`);
+                }
+                aspect = 'left';
+                stringified = stringified.replace(`"${aspect}": ${node.val}`, `"${aspect}": {"val": ${node.left.val}, 
+                    "left": ${node.left.val}, "right": ${node.left.val}}`);
+                buildString(node.left, node.left);
+            } 
+            
+            if (node.right) {
+                let aspect;
+                if (!node.left) {
+                    aspect = 'left';
+                    stringified = stringified.replace(`"${aspect}": ${node.val}`, `"${aspect}": null`);
+                }
+                aspect = 'right';
+                stringified = stringified.replace(`"${!aspect ? 'right' : aspect}": ${node.val}`, `"${aspect}": {"val": ${node.right.val},
+                     "left": ${node.right.val}, "right": ${node.right.val}}`);
+                buildString(node.right, node.right);
+            }         
+            
+            if (!node.left && !node.right) {
+                stringified = stringified.replace(`"left": ${node.val}`, '"left": null').replace(`"right": ${node.val}`, '"right": null');                
+            }
+        
+        }
+
+        buildString(tree.root);
+        console.log(stringified);
     }
-
-    /** Further study!
-     * deserialize(stringTree): deserialize stringTree into a BinaryTree object. */
 
     static deserialize() {
 
@@ -234,8 +254,6 @@ class BinaryTree {
     }
 }
 
-//const bt = new BinaryTree(new BinaryTreeNode(25, new BinaryTreeNode(30, new BinaryTreeNode(80), new BinaryTreeNode(100)), new BinaryTreeNode(35)));
-//console.log(bt);
 const bt = new BinaryTree();
 const headNode = new BinaryTreeNode(101010);
 bt.root = headNode;
@@ -259,8 +277,8 @@ node3.left = new BinaryTreeNode(7);
 node4.left = new BinaryTreeNode(8);
 node4.right = new BinaryTreeNode(13, new BinaryTreeNode(14), new BinaryTreeNode(15, new BinaryTreeNode(20)));
 
+BinaryTree.serialize(bt);
 
-//console.log(bt.nextLarger(5));
-console.log(bt.areCousins(new BinaryTreeNode(9), new BinaryTreeNode(13)));
+//console.log(bt.areCousins(new BinaryTreeNode(9), new BinaryTreeNode(12)));
 
 module.exports = { BinaryTree, BinaryTreeNode };
