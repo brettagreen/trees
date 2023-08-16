@@ -202,33 +202,28 @@ class BinaryTree {
     /** Further study!
      * serialize(tree): serialize the BinaryTree object tree into a string. */
     // for now, this code will only work with unique node values
+    // I'm thinking a better solution would have each node having a unique id (instead of relying on each node's value)
 
     static serialize(tree) {
         let stringified = `{"val": ${tree.root.val}, "left": ${tree.root.val}, "right": ${tree.root.val} }`;
 
         function buildString(node) {
             if (node.left) { 
-                let aspect;
                 if (!node.right) {
-                    aspect = 'right';
-                    stringified = stringified.replace(`"${aspect}": ${node.val}`, `"${aspect}": null`);
+                    stringified = stringified.replace(`"right": ${node.val}`, '"right": null');
                 }
-                aspect = 'left';
-                stringified = stringified.replace(`"${aspect}": ${node.val}`, `"${aspect}": {"val": ${node.left.val}, 
+                stringified = stringified.replace(`"left": ${node.val}`, `"left": {"val": ${node.left.val}, 
                     "left": ${node.left.val}, "right": ${node.left.val}}`);
-                buildString(node.left, node.left);
+                buildString(node.left);
             } 
             
             if (node.right) {
-                let aspect;
                 if (!node.left) {
-                    aspect = 'left';
-                    stringified = stringified.replace(`"${aspect}": ${node.val}`, `"${aspect}": null`);
+                    stringified = stringified.replace(`"left": ${node.val}`, '"left": null');
                 }
-                aspect = 'right';
-                stringified = stringified.replace(`"${!aspect ? 'right' : aspect}": ${node.val}`, `"${aspect}": {"val": ${node.right.val},
+                stringified = stringified.replace(`"right": ${node.val}`, `"right": {"val": ${node.right.val},
                      "left": ${node.right.val}, "right": ${node.right.val}}`);
-                buildString(node.right, node.right);
+                buildString(node.right);
             }         
             
             if (!node.left && !node.right) {
@@ -238,11 +233,62 @@ class BinaryTree {
         }
 
         buildString(tree.root);
-        console.log(stringified);
+        return stringified;
     }
 
-    static deserialize() {
+    static deserialize(tree) {
+        const so = JSON.parse(BinaryTree.serialize(tree));
+        const rootNode = new BinaryTreeNode(so.val);
 
+        function buildTree(currNode, aspect, turn) {
+            if (aspect === 'left') {
+                if (!turn) {
+                    currNode.left = null;
+                } else {
+                    currNode.left = new BinaryTreeNode(turn.val);
+                    subTree(currNode.left, turn);
+                }
+            } else {
+                if (!turn) {
+                    currNode.right = null;
+                } else {
+                    currNode.right = new BinaryTreeNode(turn.val);
+                    subTree(currNode.right, turn);
+                }
+            }
+
+            function subTree(currNode, turn) {
+                let leftTurn;
+                let rightTurn;
+
+                if (!turn.left) {
+                    currNode.left = null
+                } else {
+                    currNode.left = new BinaryTreeNode(turn.left.val);
+                    leftTurn = !turn.left ? null : turn.left;
+                }
+
+                if (!turn.right) {
+                    currNode.right = null;
+                } else {
+                    currNode.right = new BinaryTreeNode(turn.right.val);
+                    rightTurn = !turn.right ? null : turn.right;
+                }
+    
+                if (leftTurn) {
+                    subTree(currNode.left, leftTurn);
+                }
+                if (rightTurn) {
+                    subTree(currNode.right, rightTurn);
+                }
+            }
+        
+        }
+
+        buildTree(rootNode, 'left', so.left);
+        buildTree(rootNode, 'right', so.right);
+
+        return new BinaryTree(rootNode);
     }
 
     /** Further study!
@@ -277,8 +323,8 @@ node3.left = new BinaryTreeNode(7);
 node4.left = new BinaryTreeNode(8);
 node4.right = new BinaryTreeNode(13, new BinaryTreeNode(14), new BinaryTreeNode(15, new BinaryTreeNode(20)));
 
-BinaryTree.serialize(bt);
-
-//console.log(bt.areCousins(new BinaryTreeNode(9), new BinaryTreeNode(12)));
+const mytree = BinaryTree.deserialize(bt);
+console.log(mytree);
+console.log(mytree.root.right.right.left.val)
 
 module.exports = { BinaryTree, BinaryTreeNode };
