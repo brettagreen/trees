@@ -236,6 +236,7 @@ class BinaryTree {
         return stringified;
     }
 
+    // take BinaryTree, serialize it, parse resulting string to Object, and turn Object back into a BinaryTree
     static deserialize(tree) {
         const so = JSON.parse(BinaryTree.serialize(tree));
         const rootNode = new BinaryTreeNode(so.val);
@@ -322,9 +323,5 @@ headRight.right = node4;
 node3.left = new BinaryTreeNode(7);
 node4.left = new BinaryTreeNode(8);
 node4.right = new BinaryTreeNode(13, new BinaryTreeNode(14), new BinaryTreeNode(15, new BinaryTreeNode(20)));
-
-const mytree = BinaryTree.deserialize(bt);
-console.log(mytree);
-console.log(mytree.root.right.right.left.val)
 
 module.exports = { BinaryTree, BinaryTreeNode };
