@@ -21,7 +21,7 @@ class BinaryTree {
         let subLeftCount;
         let subRightCount;
 
-        if (!node.left || !node.right) {
+        if (!node || !node.left || !node.right) {
            return 0;
         }
 
@@ -37,7 +37,7 @@ class BinaryTree {
 
             return subLeftCount < subRightCount ? subLeftCount : subRightCount;
         }
-
+        
         const leftCount = gleanDepth(node.left, 1);
         const rightCount = gleanDepth(node.right, 1);
 
@@ -55,7 +55,7 @@ class BinaryTree {
         let subLeftCount;
         let subRightCount;
 
-        if (!node.left && !node.right) {
+        if (!node || !node.left && !node.right) {
            return 0;
         }
 
@@ -97,8 +97,10 @@ class BinaryTree {
         let subLeftSum;
         let subRightSum;
 
-        if (!node.left && !node.right) {
-           return node.val ? node.val : 0;
+        if (!node) {
+           return 0;
+        } else if (!node.left && !node.right) {
+            return node.val;
         }
 
         function gleanVal(node, sum) {
@@ -137,6 +139,8 @@ class BinaryTree {
      * which is larger than lowerBound. Return null if no such value exists. */
 
     nextLarger(lowerBound) {
+        if (!this.root) return null;
+
         let stack = [this.root];
         let lowest = null;
 
@@ -157,25 +161,26 @@ class BinaryTree {
 		}
 
         return lowest;
-
     }
 
     /** Further study!
      * areCousins(node1, node2): determine whether two nodes are cousins
      * (i.e. are at the same level but have different parents. ) */
-
-    //presumes non-null, unique .val nodes
     areCousins(node1, node2) {
-        const node = this.root;
-        const answers = [];
+        let answers = {1:null,2:null};
 
-        if ([node1.val, node2.val].includes(node.val)) {
-            return false;
-        }
-
-        function getDepth(node, count, parent) {
-            if ([node1.val, node2.val].includes(node.val)) {
-                answers.push([count, parent]);
+        function getDepth(node, count, parent=null) {
+            if ([node1, node2].includes(node)) {
+                if (!parent) {
+                    answers = null;
+                    return
+                }
+                if (!answers[1]) {
+                    answers[1]=[count, parent];
+                } else {
+                    answers[2]=[count, parent];
+                    return;
+                }
             } 
 
             count++;
@@ -190,138 +195,113 @@ class BinaryTree {
 
         }
 
-        getDepth(node, 1);
+        getDepth(this.root, 1);
 
-        if (answers.length === 2) {
-            return answers[0][0] === answers[1][0] && answers[0][1] !== answers[1][1];
-        } else {
+        if (!answers) {
+            return false;
+        } else if (!answers[1] || !answers[2]) {
             return "one or both node values not found in binary tree";
+        } else if (answers[1][0] === answers[2][0] && answers[1][1] !== answers[2][1]) {
+            return true;
+        } else {
+            return false;
         }
     }
 
-    /** Further study!
-     * serialize(tree): serialize the BinaryTree object tree into a string. */
-    // for now, this code will only work with unique node values
-    // I'm thinking a better solution would have each node having a unique id (instead of relying on each node's value)
-
-    static serialize(tree) {
-        let stringified = `{"val": ${tree.root.val}, "left": ${tree.root.val}, "right": ${tree.root.val} }`;
-
-        function buildString(node) {
-            if (node.left) { 
-                if (!node.right) {
-                    stringified = stringified.replace(`"right": ${node.val}`, '"right": null');
-                }
-                stringified = stringified.replace(`"left": ${node.val}`, `"left": {"val": ${node.left.val}, 
-                    "left": ${node.left.val}, "right": ${node.left.val}}`);
-                buildString(node.left);
-            } 
-            
-            if (node.right) {
-                if (!node.left) {
-                    stringified = stringified.replace(`"left": ${node.val}`, '"left": null');
-                }
-                stringified = stringified.replace(`"right": ${node.val}`, `"right": {"val": ${node.right.val},
-                     "left": ${node.right.val}, "right": ${node.right.val}}`);
-                buildString(node.right);
-            }         
-            
-            if (!node.left && !node.right) {
-                stringified = stringified.replace(`"left": ${node.val}`, '"left": null').replace(`"right": ${node.val}`, '"right": null');                
-            }
-        
-        }
-
-        buildString(tree.root);
-        return stringified;
-    }
-
-    // take BinaryTree, serialize it, parse resulting string to Object, and turn Object back into a BinaryTree
-    static deserialize(tree) {
-        const so = JSON.parse(BinaryTree.serialize(tree));
-        const rootNode = new BinaryTreeNode(so.val);
-
-        function buildTree(currNode, aspect, turn) {
-            if (aspect === 'left') {
-                if (!turn) {
-                    currNode.left = null;
-                } else {
-                    currNode.left = new BinaryTreeNode(turn.val);
-                    subTree(currNode.left, turn);
-                }
-            } else {
-                if (!turn) {
-                    currNode.right = null;
-                } else {
-                    currNode.right = new BinaryTreeNode(turn.val);
-                    subTree(currNode.right, turn);
-                }
-            }
-
-            function subTree(currNode, turn) {
-                let leftTurn;
-                let rightTurn;
-
-                if (!turn.left) {
-                    currNode.left = null
-                } else {
-                    currNode.left = new BinaryTreeNode(turn.left.val);
-                    leftTurn = !turn.left ? null : turn.left;
-                }
-
-                if (!turn.right) {
-                    currNode.right = null;
-                } else {
-                    currNode.right = new BinaryTreeNode(turn.right.val);
-                    rightTurn = !turn.right ? null : turn.right;
-                }
-    
-                if (leftTurn) {
-                    subTree(currNode.left, leftTurn);
-                }
-                if (rightTurn) {
-                    subTree(currNode.right, rightTurn);
-                }
-            }
-        
-        }
-
-        buildTree(rootNode, 'left', so.left);
-        buildTree(rootNode, 'right', so.right);
-
-        return new BinaryTree(rootNode);
-    }
-
-    /** Further study!
-     * lowestCommonAncestor(node1, node2): find the lowest common ancestor
-     * of two nodes in a binary tree. */
-
-    lowestCommonAncestor(node1, node2) {
-        
-    }
 }
 
-const bt = new BinaryTree();
-const headNode = new BinaryTreeNode(101010);
-bt.root = headNode;
+/** Further study!
+ * serialize(tree): serialize the BinaryTree object tree into a string. */
+// for now, this code will only work with unique node values
+// I'm thinking a better solution would have each node having a unique id (instead of relying on each node's value)
 
-const headLeft = new BinaryTreeNode(2);
-headNode.left = headLeft;
-const headRight = new BinaryTreeNode(11);
-headNode.right = headRight;
+function serialize(tree) {
+    let stringified = `{"val": ${tree.root.val}, "left": ${tree.root.val}, "right": ${tree.root.val} }`;
 
-const node1 = new BinaryTreeNode(9);
-headLeft.left = node1;
-const node2 = new BinaryTreeNode(10);
-headLeft.right = node2;
+    function buildString(node) {
+        if (node.left) { 
+            if (!node.right) {
+                stringified = stringified.replace(`"right": ${node.val}`, '"right": null');
+            }
+            stringified = stringified.replace(`"left": ${node.val}`, `"left": {"val": ${node.left.val}, 
+                "left": ${node.left.val}, "right": ${node.left.val}}`);
+            buildString(node.left);
+        } 
+        
+        if (node.right) {
+            if (!node.left) {
+                stringified = stringified.replace(`"left": ${node.val}`, '"left": null');
+            }
+            stringified = stringified.replace(`"right": ${node.val}`, `"right": {"val": ${node.right.val},
+                    "left": ${node.right.val}, "right": ${node.right.val}}`);
+            buildString(node.right);
+        }         
+        
+        if (!node.left && !node.right) {
+            stringified = stringified.replace(`"left": ${node.val}`, '"left": null').replace(`"right": ${node.val}`, '"right": null');                
+        }
+    
+    }
 
-const node3 = new BinaryTreeNode(6);
-const node4 = new BinaryTreeNode(12);
-headRight.left = node3;
-headRight.right = node4;
+    buildString(tree.root);
+    return stringified;
+}
 
-node3.left = new BinaryTreeNode(7);
-node4.left = new BinaryTreeNode(8);
-node4.right = new BinaryTreeNode(13, new BinaryTreeNode(14), new BinaryTreeNode(15, new BinaryTreeNode(20)));
+// take BinaryTree, serialize it, parse resulting string to Object, and turn Object back into a BinaryTree
+function deserialize(tree) {
+    const so = JSON.parse(serialize(tree));
+    const rootNode = new BinaryTreeNode(so.val);
 
-module.exports = { BinaryTree, BinaryTreeNode };
+    function buildTree(currNode, aspect, turn) {
+        if (aspect === 'left') {
+            if (!turn) {
+                currNode.left = null;
+            } else {
+                currNode.left = new BinaryTreeNode(turn.val);
+                subTree(currNode.left, turn);
+            }
+        } else {
+            if (!turn) {
+                currNode.right = null;
+            } else {
+                currNode.right = new BinaryTreeNode(turn.val);
+                subTree(currNode.right, turn);
+            }
+        }
+
+        function subTree(currNode, turn) {
+            let leftTurn;
+            let rightTurn;
+
+            if (!turn.left) {
+                currNode.left = null
+            } else {
+                currNode.left = new BinaryTreeNode(turn.left.val);
+                leftTurn = !turn.left ? null : turn.left;
+            }
+
+            if (!turn.right) {
+                currNode.right = null;
+            } else {
+                currNode.right = new BinaryTreeNode(turn.right.val);
+                rightTurn = !turn.right ? null : turn.right;
+            }
+
+            if (leftTurn) {
+                subTree(currNode.left, leftTurn);
+            }
+            if (rightTurn) {
+                subTree(currNode.right, rightTurn);
+            }
+        }
+    
+    }
+
+    buildTree(rootNode, 'left', so.left);
+    buildTree(rootNode, 'right', so.right);
+
+    return new BinaryTree(rootNode);
+}
+
+
+module.exports = { BinaryTree, BinaryTreeNode, serialize, deserialize };
